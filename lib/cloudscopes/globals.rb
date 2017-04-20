@@ -21,9 +21,3 @@ def publish(samples)
     end
   end
 end
-
-def sample(category, *metrics)
-  category, metrics = category if category.is_a? Array # sample may be passed the single yield variable of Hash#each
-  metrics = [ metrics ] unless metrics.is_a? Array
-  [ category, metrics.collect { |m| Cloudscopes::Sample.new(category, m) } ]
-end

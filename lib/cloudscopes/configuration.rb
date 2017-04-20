@@ -28,7 +28,26 @@ module Cloudscopes
     end
 
     def data_dimensions
-      @settings['dimensions'] || ({ 'InstanceId' => '#{ec2.instance_id}' })
+      @data_dimensions ||=
+          eval_dimension_specs(settings['dimensions'] || {'InstanceId' => '#{ec2.instance_id}'})
+    end
+
+    private
+
+    def eval_dimension_specs(specs)
+      specs.collect do |key, value|
+        begin
+          if !value.start_with?('"') and value.include?('#')
+            # user wants to expand a string expression, but can't be bothered with escaping double
+            # quotes
+            quoted_value = %("#{value}")
+          end
+          value = Cloudscopes.get_binding.eval(quoted_value || value)
+        rescue NameError
+          # assume the user meant to send the static text
+        end
+        {name: key, value: value}
+      end
     end
 
     private

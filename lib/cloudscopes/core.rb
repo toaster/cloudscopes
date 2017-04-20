@@ -13,6 +13,9 @@ module Cloudscopes
       if metric_dir = @settings['metric_definition_dir']
         merge_metric_definitions(Dir.glob("#{metric_dir}/*").select(&File.method(:file?)))
       end
+      if plugin_dir = @settings['plugin_dir']
+        @plugin_files = Dir.glob("#{plugin_dir}/*").select(&File.method(:file?))
+      end
       @initialized = true
     end
 
@@ -23,7 +26,9 @@ module Cloudscopes
 
     def samples
       metrics.collect do |category, metrics|
-        [category, Array(metrics).map(&Cloudscopes::Sample::Code.method(:new))]
+        [category, Array(metrics).map(&Sample::Code.method(:new))]
+      end + code_snippets.collect do |path, code|
+        Sample::Collector.samples(path, code)
       end
     end
 
@@ -54,6 +59,7 @@ module Cloudscopes
       publish?
       settings
       metrics
+      plugin_files
     ).each do |name|
       instance_var = "@#{name.gsub(/\?$/, "")}"
       define_method(name) do
@@ -80,7 +86,7 @@ module Cloudscopes
             # quotes
             quoted_value = %("#{value}")
           end
-          value = Cloudscopes.get_binding.eval(quoted_value || value)
+          value = eval(quoted_value || value)
         rescue NameError
           # assume the user meant to send the static text
         end
@@ -95,6 +101,15 @@ module Cloudscopes
           @metrics[namespace] += definitions
         end
       end
+    end
+
+    def code_snippets
+      @code_snippets ||=
+          if plugin_files
+            plugin_files.zip(plugin_files.map(&File.method(:read)))
+          else
+            []
+          end
     end
   end
 end

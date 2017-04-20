@@ -20,13 +20,11 @@ module Cloudscopes
     end
 
     def client
-      @client ||= initClient
-    end
-
-    def initClient
-      AWS::CloudWatch.new access_key_id: @settings['aws-key'],
-                            secret_access_key: @settings['aws-secret'],
-                            region: @settings['region']
+      @client ||= Aws::CloudWatch::Client.new(
+        access_key_id: @settings['aws-key'],
+        secret_access_key: @settings['aws-secret'],
+        region: @settings['region'],
+      )
     end
 
     def data_dimensions

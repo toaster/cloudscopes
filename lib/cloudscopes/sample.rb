@@ -1,6 +1,6 @@
 module Cloudscopes
 
-  class Sample
+  module Sample
 
     module Base
       def unit
@@ -24,21 +24,23 @@ module Cloudscopes
       end
     end
 
-    include Base
+    class Code
+      include Base
 
-    attr_reader :name, :value, :unit
+      attr_reader :name, :value, :unit
 
-    def initialize(namespace, metric)
-      @name = metric['name']
-      @unit = metric['unit']
-      @value = nil
+      def initialize(namespace, metric)
+        @name = metric['name']
+        @unit = metric['unit']
+        @value = nil
 
-      begin
-        return if metric['requires'] and ! Cloudscopes.get_binding.eval(metric['requires'])
-        @value = Cloudscopes.get_binding.eval(metric['value'])
-      rescue => e
-        STDERR.puts("Error evaluating #{@name}: #{e}")
-        puts e.backtrace
+        begin
+          return if metric['requires'] and ! Cloudscopes.get_binding.eval(metric['requires'])
+          @value = Cloudscopes.get_binding.eval(metric['value'])
+        rescue => e
+          STDERR.puts("Error evaluating #{@name}: #{e}")
+          puts e.backtrace
+        end
       end
     end
 

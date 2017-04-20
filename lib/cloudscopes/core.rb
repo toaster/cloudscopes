@@ -23,7 +23,7 @@ module Cloudscopes
 
     def samples
       metrics.collect do |category, metrics|
-        [category, Array(metrics).collect {|m| Cloudscopes::Sample.new(category, m)}]
+        [category, Array(metrics).collect {|m| Cloudscopes::Sample::Code.new(category, m)}]
       end
     end
 

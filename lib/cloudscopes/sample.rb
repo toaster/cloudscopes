@@ -29,7 +29,7 @@ module Cloudscopes
 
       attr_reader :name, :value, :unit
 
-      def initialize(namespace, metric)
+      def initialize(metric)
         @name = metric['name']
         @unit = metric['unit']
         @value = nil

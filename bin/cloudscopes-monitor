@@ -1,10 +1,11 @@
 #!/usr/bin/env ruby
 
+require 'optparse'
 require 'cloudscopes'
 
-def handle(metrics)
-  return publish metrics if Cloudscopes.should_publish
-  metrics.each do |category, samples|
+def handle(samples)
+  return Cloudscopes.publish(samples) if Cloudscopes.publish?
+  samples.each do |category, samples|
     valid_data = samples.select(&:valid?)
     next if valid_data.empty?
     puts "#{category.rjust(10,' ')}: "
@@ -12,8 +13,23 @@ def handle(metrics)
   end
 end
 
-metrics = Cloudscopes.init
-samples = metrics.collect do |category, metrics|
-  [category, Array(metrics).collect {|m| Cloudscopes::Sample.new(category, m)}]
+publish = true
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{$0} [options] <config.yaml>\n\nOptions:"
+  opts.on("-t", "dump samples to the console instead of publishing, for testing") do
+    publish = false
+  end
+  opts.on_tail("-?", "-h", "--help", "Show this message") do
+    puts(opts)
+    exit
+  end
 end
-handle(samples)
+arguments = option_parser.parse!
+unless arguments.size == 1
+  $stderr.puts(option_parser)
+  exit 1
+end
+
+Cloudscopes.init(config_file: arguments.first, publish: publish)
+
+handle(Cloudscopes.samples)

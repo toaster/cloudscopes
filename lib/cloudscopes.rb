@@ -1,6 +1,4 @@
-require 'cloudscopes/configuration'
-require 'cloudscopes/globals'
-require 'cloudscopes/options'
+require 'cloudscopes/core'
 require 'cloudscopes/sample'
 require 'cloudscopes/version'
 

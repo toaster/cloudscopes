@@ -5,7 +5,7 @@ require 'cloudscopes'
 def handle(metrics)
   return publish metrics if Cloudscopes.should_publish
   metrics.each do |category, samples|
-    valid_data = samples.select(&:valid)
+    valid_data = samples.select(&:valid?)
     next if valid_data.empty?
     puts "#{category.rjust(10,' ')}: "
     valid_data.each { |s| puts "#{' '*12}#{s.name} - #{s.value} #{s.unit} (#{s.to_cloudwatch_metric_data})" }
@@ -13,4 +13,4 @@ def handle(metrics)
 end
 
 metrics = Cloudscopes.init
-handle metrics.collect { |metric| sample metric } 
+handle metrics.collect { |metric| sample metric }

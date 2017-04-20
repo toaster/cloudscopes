@@ -8,7 +8,7 @@ def publish(samples)
   end
   samples.each do |type,metric_samples|
     begin
-      valid_data = metric_samples.select(&:valid)
+      valid_data = metric_samples.select(&:valid?)
       next if valid_data.empty?
       # slice metrics to chunks
       # put_metric_data is limited to 40KB per POST request

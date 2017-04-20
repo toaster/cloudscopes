@@ -1,9 +1,9 @@
 module Cloudscopes
-  
+
   class Sample
-    
+
     attr_reader :name, :value, :unit
-    
+
     def dimensions
       Cloudscopes.data_dimensions.collect do |key,value|
         begin
@@ -17,25 +17,25 @@ module Cloudscopes
         end
       end
     end
-    
+
     def initialize(namespace, metric)
       @name = metric['name']
       @unit = metric['unit']
       @value = nil
-      
+
       begin
-        return if metric['requires'] and ! Cloudscopes.get_binding.eval(metric['requires']) 
+        return if metric['requires'] and ! Cloudscopes.get_binding.eval(metric['requires'])
         @value = Cloudscopes.get_binding.eval(metric['value'])
       rescue => e
         STDERR.puts("Error evaluating #{@name}: #{e}")
         puts e.backtrace
       end
     end
-    
-    def valid
-      ! @value.nil?
+
+    def valid?
+      !@value.nil?
     end
-    
+
     def to_cloudwatch_metric_data
       return nil if @value.nil?
       data = { metric_name: @name, value: @value }
@@ -43,7 +43,7 @@ module Cloudscopes
       data[:dimensions] = dimensions
       data
     end
-    
+
   end
-  
+
 end

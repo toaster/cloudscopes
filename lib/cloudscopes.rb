@@ -10,6 +10,7 @@ require 'cloudscopes/filesystem'
 require 'cloudscopes/redis'
 require 'cloudscopes/network'
 require 'cloudscopes/ec2'
+require 'cloudscopes/docker'
 
 module Cloudscopes
 

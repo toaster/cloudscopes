@@ -20,8 +20,7 @@ Gem::Specification.new do |spec|
   spec.extra_rdoc_files = ["README.md"]
 
   spec.add_dependency 'aws-sdk', '~> 2.9'
-#  spec.add_dependency 'redis', '~> 3.0' # we depend on redis only if the user uses the redis support. No reason to force it here
-  spec.add_dependency 'ffi', '~> 1.9', '>= 1.9.3'
+  spec.add_dependency 'sys-filesystem', '~> 1.1'
 
   spec.add_development_dependency "bundler"
   spec.add_development_dependency "rake"

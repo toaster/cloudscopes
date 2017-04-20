@@ -1,5 +1,3 @@
-require 'ffi'
-
 require 'cloudscopes/version'
 require 'cloudscopes/configuration'
 require 'cloudscopes/options'

@@ -1,0 +1,34 @@
+Systems:
+  - name: Load Per CPU
+    unit: Percent
+    value: 100 * system.loadavg5 / system.cpucount
+  - name: Pending IO
+    unit: Count
+    value: system.iostat[8]
+  - name: Memory Utilization
+    unit: Percent
+    value: 100 * memory.MemUsed / memory.MemTotal
+  - name: Available Space on System
+    unit: Gigabytes
+    value: (fs_info = filesystem.df("/")).blocks_available * fs_info.block_size / 1024 ** 3
+  - name: MyService processes
+    unit: Count
+    value: system.ps.select { |p| p.exe_name == 'myservice' }.size
+
+Queues:
+  - name: Pending Resque Items
+    unit: Count
+    value: redis.resque_size("some_queue")
+    requires: system.service('redis-server')
+
+Services:
+  - name: My service status
+    value: if system.service('my-service') then 1 else 0 end
+    requires: File.exists?('/usr/sbin/my-service')
+  - name: Nginx Running
+    value: if network.port_open?(80) then 1 else 0 end
+    requires: File.exists?(Dir.glob("/etc/nginx/sites-enabled/*").first || "")
+
+  - name: Bluepill service Running
+    value: if system.bluepill_ok?('my-service') then 1 else 0 end
+    requires: system.service('my-service')

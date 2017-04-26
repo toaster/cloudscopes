@@ -113,8 +113,13 @@ module Cloudscopes
           name = name[0...-ext.length]
         end
         name = name.capitalize.gsub(/_([a-z])/) { $1.upcase }
-        Metric::SampleProvider.new(name, code)
-      end
+        begin
+          Metric::SampleProvider.new(name, code)
+        rescue => e
+          STDERR.puts("Error loading #{file}: #{e}")
+          STDERR.puts(e.backtrace)
+        end
+      end.compact
     end
   end
 end

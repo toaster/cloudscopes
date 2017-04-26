@@ -39,7 +39,7 @@ module Cloudscopes
           @value = Cloudscopes.get_binding.eval(metric['value'])
         rescue => e
           STDERR.puts("Error evaluating #{@name}: #{e}")
-          puts e.backtrace
+          STDERR.puts(e.backtrace)
         end
       end
     end

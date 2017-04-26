@@ -14,7 +14,12 @@ module Cloudscopes
 
       def samples
         collector = SampleCollector.new(@metric)
-        collector.instance_eval(&@compute_samples)
+        begin
+          collector.instance_eval(&@compute_samples)
+        rescue => e
+          STDERR.puts("Error sampling #{@metric.class.name}: #{e}")
+          STDERR.puts(e.backtrace)
+        end
         [@category, collector.instance_variable_get("@samples")]
       end
     end

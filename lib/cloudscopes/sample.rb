@@ -55,34 +55,6 @@ module Cloudscopes
         @unit = unit
       end
     end
-
-    class Collector
-      class << self
-        def samples(source, code)
-          collector = new
-          collector.instance_eval(code)
-          category = collector.instance_variable_get("@category") or
-              raise "Code from #{source} did not specify category."
-          [category, collector.instance_variable_get("@__samples")]
-        end
-      end
-
-      def initialize
-        @__samples = []
-      end
-
-      def category(category)
-        @category = category
-      end
-
-      def sample(*args)
-        @__samples << Simple.new(*args)
-      end
-
-      def method_missing(method, *args)
-        Cloudscopes.send(method, *args)
-      end
-    end
   end
 
 end

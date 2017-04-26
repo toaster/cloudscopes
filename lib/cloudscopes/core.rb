@@ -1,6 +1,8 @@
 require 'yaml'
 require 'aws-sdk'
 
+require 'cloudscopes/metric'
+
 module Cloudscopes
 
   class << self
@@ -15,6 +17,8 @@ module Cloudscopes
       end
       if plugin_dir = @settings['plugin_dir']
         @plugin_files = Dir.glob("#{plugin_dir}/*").select(&File.method(:file?))
+      else
+        @plugin_files = []
       end
       @initialized = true
     end
@@ -27,9 +31,7 @@ module Cloudscopes
     def samples
       metrics.collect do |category, metrics|
         [category, Array(metrics).map(&Sample::Code.method(:new))]
-      end + code_snippets.collect do |path, code|
-        Sample::Collector.samples(path, code)
-      end
+      end + providers.collect(&:samples)
     end
 
     def publish(samples)
@@ -103,13 +105,16 @@ module Cloudscopes
       end
     end
 
-    def code_snippets
-      @code_snippets ||=
-          if plugin_files
-            plugin_files.zip(plugin_files.map(&File.method(:read)))
-          else
-            []
-          end
+    def providers
+      @providers ||= plugin_files.map do |file|
+        code = File.read(file)
+        name = File.basename(file)
+        unless (ext = File.extname(file)).empty?
+          name = name[0...-ext.length]
+        end
+        name = name.capitalize.gsub(/_([a-z])/) { $1.upcase }
+        Metric::SampleProvider.new(name, code)
+      end
     end
   end
 end

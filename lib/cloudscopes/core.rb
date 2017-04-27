@@ -11,6 +11,9 @@ module Cloudscopes
       configuration = YAML.load(File.read(config_file))
       @publish = publish
       @settings = configuration['settings']
+      if region = ENV['CLOUDSCOPES_REGION']
+        @settings['region'] = region
+      end
       metric_definitions = configuration['metrics'] || {}
       if metric_dir = @settings['metric_definition_dir']
         merge_metric_definitions(metric_definitions,

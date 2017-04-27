@@ -16,7 +16,7 @@ module Cloudscopes
         merge_metric_definitions(Dir.glob("#{metric_dir}/*").select(&File.method(:file?)))
       end
       if plugin_dir = @settings['plugin_dir']
-        @plugin_files = Dir.glob("#{plugin_dir}/*").select(&File.method(:file?))
+        @plugin_files = Dir.glob("#{plugin_dir}/*.rb").select(&File.method(:file?))
       else
         @plugin_files = []
       end

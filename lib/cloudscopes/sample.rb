@@ -2,13 +2,11 @@ module Cloudscopes
 
   module Sample
 
-    module Base
-      def unit
-        nil
-      end
+    class Base
+      attr_reader :name, :value, :unit, :dimensions
 
-      def dimensions
-        Cloudscopes.data_dimensions
+      def initialize
+        @dimensions = Cloudscopes.data_dimensions
       end
 
       def valid?
@@ -24,12 +22,10 @@ module Cloudscopes
       end
     end
 
-    class Code
-      include Base
-
-      attr_reader :name, :value, :unit
-
+    class Code < Base
       def initialize(metric)
+        super()
+
         @name = metric['name']
         @unit = metric['unit']
         @value = nil
@@ -44,15 +40,13 @@ module Cloudscopes
       end
     end
 
-    class Simple
-      include Base
-
-      attr_reader :name, :value, :unit
-
-      def initialize(name:, value:, unit: nil)
+    class Simple < Base
+      def initialize(name:, value:, unit: nil, dimensions: nil)
+        super()
         @name = name
         @value = value
         @unit = unit
+        @dimensions = dimensions.map {|name, value| {name: name, value: value} } if dimensions
       end
     end
   end

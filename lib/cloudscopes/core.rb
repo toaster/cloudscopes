@@ -112,7 +112,6 @@ module Cloudscopes
         unless (ext = File.extname(file)).empty?
           name = name[0...-ext.length]
         end
-        name = name.capitalize.gsub(/_([a-z])/) { $1.upcase }
         begin
           Metric::SampleProvider.new(name, code)
         rescue => e

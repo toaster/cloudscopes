@@ -1,0 +1,6 @@
+/var/log/cloudscopes/*
+/var/log/cloudscopes/**/*
+{
+    daily
+    rotate 3
+}

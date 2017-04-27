@@ -5,10 +5,12 @@ module Cloudscopes
     class SampleProvider
       def initialize(name, code)
         klass = Class.new { include Instance }
-        Object.const_set(name, klass)
+        klass_name = name.capitalize.gsub(/_([a-z])/) { $1.upcase }
+        Object.const_set(klass_name, klass)
         klass.class_eval(code)
         @metric = klass.new
-        @category = klass.category or raise "#{name} has no category specified."
+        @metric.instance_variable_set("@name", name)
+        @category = klass.category or raise "#{klass_name} has no category specified."
         @compute_samples = klass.instance_variable_get("@compute_samples")
       end
 
@@ -53,6 +55,12 @@ module Cloudscopes
 
         def describe_samples(&block)
           @compute_samples = block
+        end
+      end
+
+      def log(message)
+        File.open("/var/log/cloudscopes/plugins/#{@name}.log", "a") do |f|
+          f.puts message
         end
       end
 

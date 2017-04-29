@@ -36,6 +36,10 @@ module Cloudscopes
         @samples << Sample::Simple.new(*args)
       end
 
+      def system # must define, otherwise kernel.system matches
+        Cloudscopes.system
+      end
+
       def method_missing(method, *args)
         @metric.send(method, *args)
       end

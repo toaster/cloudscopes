@@ -39,16 +39,6 @@ module Cloudscopes
         end
       end
     end
-
-    class Simple < Base
-      def initialize(name:, value:, unit: nil, dimensions: nil)
-        super()
-        @name = name
-        @value = value
-        @unit = unit
-        @dimensions = dimensions.map {|name, value| {name: name, value: value} } if dimensions
-      end
-    end
   end
 
 end

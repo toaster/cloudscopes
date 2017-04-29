@@ -113,7 +113,7 @@ module Cloudscopes
           name = name[0...-ext.length]
         end
         begin
-          Metric::SampleProvider.new(name, code)
+          Metric::Group.from_plugin(name, code)
         rescue => e
           STDERR.puts("Error loading #{file}: #{e}")
           STDERR.puts(e.backtrace)

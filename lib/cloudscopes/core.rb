@@ -9,29 +9,25 @@ module Cloudscopes
     def init(config_file:, publish: true)
       return if @initialized
       configuration = YAML.load(File.read(config_file))
-      @settings = configuration['settings']
-      @metrics = configuration['metrics'] || {}
       @publish = publish
+      @settings = configuration['settings']
+      metric_definitions = configuration['metrics'] || {}
       if metric_dir = @settings['metric_definition_dir']
-        merge_metric_definitions(Dir.glob("#{metric_dir}/*").select(&File.method(:file?)))
+        merge_metric_definitions(metric_definitions,
+            Dir.glob("#{metric_dir}/*").select(&File.method(:file?)))
       end
+      @metric_groups = metric_groups_from_definitions(metric_definitions)
       if plugin_dir = @settings['plugin_dir']
-        @plugin_files = Dir.glob("#{plugin_dir}/*.rb").select(&File.method(:file?))
-      else
-        @plugin_files = []
+        @metric_groups += metric_groups_from_plugin_files(
+            Dir.glob("#{plugin_dir}/*.rb").select(&File.method(:file?)))
       end
+      @data_dimensions ||=
+          eval_dimension_specs(@settings['dimensions'] || {'InstanceId' => '#{ec2.instance_id}'})
       @initialized = true
     end
 
-    def data_dimensions
-      @data_dimensions ||=
-          eval_dimension_specs(settings['dimensions'] || {'InstanceId' => '#{ec2.instance_id}'})
-    end
-
     def samples
-      metrics.collect do |category, metrics|
-        [category, Array(metrics).map(&Sample::Code.method(:new))]
-      end + providers.collect(&:samples)
+      metric_groups.collect(&:samples)
     end
 
     def publish(samples)
@@ -52,16 +48,16 @@ module Cloudscopes
             )
           end
         rescue Exception => e
-          puts "Error publishing metrics for #{type}: #{e}"
+          STDERR.puts "Error publishing metrics for #{type}: #{e}"
         end
       end
     end
 
     %w(
+      data_dimensions
+      metric_groups
       publish?
       settings
-      metrics
-      plugin_files
     ).each do |name|
       instance_var = "@#{name.gsub(/\?$/, "")}"
       define_method(name) do
@@ -96,17 +92,21 @@ module Cloudscopes
       end
     end
 
-    def merge_metric_definitions(files)
+    def merge_metric_definitions(metric_definitions, files)
       files.each do |metric_file|
         YAML.load(File.read(metric_file)).each do |namespace, definitions|
-          @metrics[namespace] ||= []
-          @metrics[namespace] += definitions
+          metric_definitions[namespace] ||= []
+          metric_definitions[namespace] += definitions
         end
       end
     end
 
-    def providers
-      @providers ||= plugin_files.map do |file|
+    def metric_groups_from_definitions(definitions)
+      definitions.map {|category, metrics| Metric::Group.from_definition(category, metrics) }
+    end
+
+    def metric_groups_from_plugin_files(plugin_files)
+      plugin_files.map do |file|
         code = File.read(file)
         name = File.basename(file)
         unless (ext = File.extname(file)).empty?

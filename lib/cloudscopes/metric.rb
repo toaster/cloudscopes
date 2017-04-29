@@ -5,6 +5,10 @@ module Cloudscopes
         def from_plugin(*args)
           PluggedIn.new(*args)
         end
+
+        def from_definition(*args)
+          Defined.new(*args)
+        end
       end
 
       class PluggedIn
@@ -74,6 +78,41 @@ module Cloudscopes
 
           def method_missing(method, *args)
             @metric.send(method, *args)
+          end
+        end
+      end
+
+      class Defined
+        def initialize(category, metric_definitions)
+          @category = category
+          @metrics = metric_definitions.map(&Metric.method(:new))
+        end
+
+        def samples
+          [@category, @metrics.map(&:sample)]
+        end
+
+        class Metric
+          def initialize(definition)
+            @name = definition['name']
+            @unit = definition['unit']
+            @dimensions = definition['dimensions']
+            @value_callback = eval("Proc.new { #{definition['value']} }")
+            if definition['requires']
+              @requires_callback = eval("Proc.new { #{definition['requires']} }")
+            end
+          end
+
+          def sample
+            begin
+              if !@requires_callback || Cloudscopes.instance_eval(&@requires_callback)
+                value = Cloudscopes.instance_eval(&@value_callback)
+              end
+            rescue => e
+              STDERR.puts("Error evaluating #{@name}: #{e}")
+              STDERR.puts(e.backtrace)
+            end
+            Sample.new(name: @name, value: value, unit: @unit, dimensions: @dimensions)
           end
         end
       end

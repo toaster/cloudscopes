@@ -1,5 +1,4 @@
 require 'cloudscopes/core'
-require 'cloudscopes/sample'
 require 'cloudscopes/version'
 
 require 'cloudscopes/docker'
@@ -12,10 +11,6 @@ require 'cloudscopes/redis'
 require 'cloudscopes/system'
 
 module Cloudscopes
-
-  def self.get_binding
-    return binding()
-  end
 
   def self.method_missing(*args)
     Cloudscopes.const_get(args.shift.to_s.capitalize).new(*args)

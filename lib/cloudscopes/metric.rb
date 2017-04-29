@@ -10,7 +10,7 @@ module Cloudscopes
         klass.class_eval(code)
         @metric = klass.new
         @metric.instance_variable_set("@name", name)
-        @category = klass.category or raise "#{klass_name} has no category specified."
+        @category = klass.category || klass_name
         @compute_samples = klass.instance_variable_get("@compute_samples")
       end
 

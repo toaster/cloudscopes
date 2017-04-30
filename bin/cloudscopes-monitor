@@ -13,6 +13,11 @@ def handle(samples)
   end
 end
 
+def exit_with_error(message)
+  $stderr.puts(message)
+  exit 1
+end
+
 publish = true
 loop_period = nil
 option_parser = OptionParser.new do |opts|
@@ -24,8 +29,7 @@ option_parser = OptionParser.new do |opts|
       "Perform sampling every PERIOD (defaults to 60) seconds") do |period|
     period ||= 60
     if period < 10 || period > 86_400
-      $stderr.puts("The loop period must be a value from 10 to 86,400 seconds.")
-      exit 1
+      exit_with_error("The loop period must be a value from 10 to 86,400 seconds.")
     end
     loop_period = period
   end
@@ -34,11 +38,12 @@ option_parser = OptionParser.new do |opts|
     exit
   end
 end
-arguments = option_parser.parse!
-unless arguments.size == 1
-  $stderr.puts(option_parser)
-  exit 1
+begin
+  arguments = option_parser.parse!
+rescue OptionParser::ParseError
+  exit_with_error(option_parser)
 end
+exit_with_error(option_parser) unless arguments.size == 1
 
 Cloudscopes.init(config_file: arguments.first, publish: publish)
 

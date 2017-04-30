@@ -14,10 +14,20 @@ def handle(samples)
 end
 
 publish = true
+loop_period = nil
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{$0} [options] <config.yaml>\n\nOptions:"
-  opts.on("-t", "dump samples to the console instead of publishing, for testing") do
+  opts.on("-t", "--test", "Dump samples to the console instead of publishing") do
     publish = false
+  end
+  opts.on("-l", "--loop [PERIOD]", Integer,
+      "Perform sampling every PERIOD (defaults to 60) seconds") do |period|
+    period ||= 60
+    if period < 10 || period > 86_400
+      $stderr.puts("The loop period must be a value from 10 to 86,400 seconds.")
+      exit 1
+    end
+    loop_period = period
   end
   opts.on_tail("-?", "-h", "--help", "Show this message") do
     puts(opts)
@@ -32,4 +42,17 @@ end
 
 Cloudscopes.init(config_file: arguments.first, publish: publish)
 
-handle(Cloudscopes.samples)
+if loop_period
+  start_time = next_start_time = Time.now
+  while true
+    # fork to limit master memory usage
+    Process.wait(fork { handle(Cloudscopes.samples) })
+    while next_start_time <= start_time
+      next_start_time = start_time + loop_period
+    end
+    sleep(next_start_time - Time.now)
+    start_time = next_start_time
+  end
+else
+  handle(Cloudscopes.samples)
+end

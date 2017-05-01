@@ -1,0 +1,12 @@
+description "Cloudscopes monitoring"
+
+start on stopped rc RUNLEVEL=[2345]
+
+script
+  exec >> /var/log/cloudscopes/log 2>&1
+  set -a
+  . /etc/environment
+  exec <%= bin_dir %>/cloudscopes-monitor -l /etc/cloudscopes/monitor.conf
+end script
+
+respawn

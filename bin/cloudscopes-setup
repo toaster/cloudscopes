@@ -1,14 +1,65 @@
 #!/usr/bin/env ruby
 
+require 'optparse'
 require 'fileutils'
+require 'erb'
+
+module TemplateProcessor
+  class << self
+    def generate(src_file, dest_file, permissions = 0644)
+      code = File.read(src_file)
+      erb = ERB.new(code, 0, "-")
+      File.write(dest_file, erb.result(binding), perm: permissions)
+    end
+
+    def bin_dir
+      File.expand_path("..", __FILE__)
+    end
+  end
+end
+
+def exit_with_error(message)
+  $stderr.puts(message)
+  exit 1
+end
+
+DEFAULT_SERVICE_TYPE = SERVICE_TYPE_CRON = "cron"
+SERVICE_TYPE_UPSTART = "upstart"
+SERVICE_TYPES = [SERVICE_TYPE_CRON, SERVICE_TYPE_UPSTART]
+
+service_type = DEFAULT_SERVICE_TYPE
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{$0} [options]\n\nOptions:"
+  opts.on("-s", "--service-type type", String, "Specify the service type to install. " +
+      "This hast to be one out of (#{SERVICE_TYPES.join(", ")})." +
+      "'#{DEFAULT_SERVICE_TYPE}' will be used if no other is specified.") do |type|
+    exit_with_error("Service type '#{type}' is not supported.") unless SERVICE_TYPES.include?(type)
+    service_type = type
+  end
+  opts.on_tail("-?", "-h", "--help", "Show this message") do
+    puts(opts)
+    exit
+  end
+end
+begin
+  arguments = option_parser.parse!
+rescue OptionParser::ParseError
+  exit_with_error(option_parser)
+end
 
 basedir = File.expand_path(File.dirname(__FILE__) + "/..")
 FileUtils.mkdir_p '/etc/cloudscopes/metric_definition.d'
 FileUtils.mkdir_p '/etc/cloudscopes/plugin.d'
 FileUtils.mkdir_p '/var/log/cloudscopes/plugins'
-FileUtils.cp "#{basedir}/config/cron.config", '/etc/cron.d/cloudscopes-monitoring'
 FileUtils.cp "#{basedir}/config/monitoring.yaml", '/etc/cloudscopes/monitor.conf'
 FileUtils.cp "#{basedir}/config/default_metrics.yaml",
     '/etc/cloudscopes/metric_definition.d/default.yaml'
 FileUtils.cp "#{basedir}/config/logrotate", '/etc/logrotate.d/cloudscopes'
-FileUtils.chmod 0600, '/etc/cron.d/cloudscopes-monitoring'
+
+case service_type
+when SERVICE_TYPE_CRON
+  FileUtils.cp "#{basedir}/config/cron.config", '/etc/cron.d/cloudscopes-monitoring'
+  FileUtils.chmod 0600, '/etc/cron.d/cloudscopes-monitoring'
+when SERVICE_TYPE_UPSTART
+  TemplateProcessor.generate("#{basedir}/config/rc.erb", "/etc/init/cloudscopes.conf", 0755)
+end

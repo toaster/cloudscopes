@@ -1,5 +1,6 @@
-require 'yaml'
 require 'aws-sdk'
+require 'logger'
+require 'yaml'
 
 require 'cloudscopes/metric'
 
@@ -50,10 +51,19 @@ module Cloudscopes
               metric_data: slice.collect(&:to_cloudwatch_metric_data),
             )
           end
-        rescue Exception => e
-          STDERR.puts "Error publishing metrics for #{type}: #{e}"
+        rescue => e
+          log_error("Error publishing metrics for #{type}.", e)
         end
       end
+    end
+
+    def log
+      @logger = Logger.new(STDOUT)
+    end
+
+    def log_error(msg, exception)
+      log.error(msg)
+      log.error(exception)
     end
 
     %w(
@@ -118,8 +128,7 @@ module Cloudscopes
         begin
           Metric::Group.from_plugin(name, code)
         rescue => e
-          STDERR.puts("Error loading #{file}: #{e}")
-          STDERR.puts(e.backtrace)
+          log_error("Error loading #{file}.", e)
         end
       end.compact
     end

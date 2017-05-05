@@ -30,8 +30,7 @@ module Cloudscopes
           begin
             collector.instance_eval(&@compute_samples)
           rescue => e
-            STDERR.puts("Error sampling #{@group.class.name}: #{e}")
-            STDERR.puts(e.backtrace)
+            Cloudscopes.log_error("Error sampling #{@group.class.name}.", e)
           end
           [@category, collector.instance_variable_get("@samples")]
         end
@@ -109,8 +108,7 @@ module Cloudscopes
                 value = Cloudscopes.instance_eval(&@value_callback)
               end
             rescue => e
-              STDERR.puts("Error evaluating #{@name}: #{e}")
-              STDERR.puts(e.backtrace)
+              Cloudscopes.log_error("Error evaluating #{@name}.", e)
             end
             Sample.new(name: @name, value: value, unit: @unit, dimensions: @dimensions)
           end

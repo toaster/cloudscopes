@@ -50,8 +50,8 @@ Cloudscopes.init(config_file: arguments.first, publish: publish)
 if loop_period
   start_time = next_start_time = Time.now
   while true
-    # fork to limit master memory usage
-    Process.wait(fork { handle(Cloudscopes.samples) })
+    handle(Cloudscopes.samples)
+    GC.start
     while next_start_time <= start_time
       next_start_time = start_time + loop_period
     end

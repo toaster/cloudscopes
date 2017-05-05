@@ -1,3 +1,5 @@
+require 'logger'
+
 module Cloudscopes
   module Metric
     module Group
@@ -51,10 +53,8 @@ module Cloudscopes
             end
           end
 
-          def log(message)
-            File.open("/var/log/cloudscopes/plugins/#{@name}.log", "a") do |f|
-              f.puts message
-            end
+          def log
+            @log ||= Logger.new("/var/log/cloudscopes/plugins/#{@name}.log")
           end
 
           def method_missing(method, *args)

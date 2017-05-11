@@ -16,7 +16,7 @@ module Cloudscopes
       class PluggedIn
         def initialize(name, code)
           klass = Class.new { include Base }
-          klass_name = name.capitalize.gsub(/_([a-z])/) { $1.upcase }
+          klass_name = Const.name_from_underscore_name(name)
           Object.const_set(klass_name, klass)
           klass.class_eval(code)
           @group = klass.new

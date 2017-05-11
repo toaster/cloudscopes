@@ -27,14 +27,25 @@ module Cloudscopes
     end
   end
 
-  def self.method_missing(*args)
-    receiver = args.shift.to_s
-    if args.empty?
-      @instance_cache ||= Hash.new {|h, k| h[k] = Const.for(k).new }
-      @instance_cache[receiver]
-    else
-      Const.for(receiver).new(*args)
+  module Instance
+    class << self
+      def for(receiver, *args)
+        if args.empty?
+          @instance_cache ||= Hash.new {|h, k| h[k] = Const.for(k).new }
+          @instance_cache[receiver]
+        else
+          Const.for(receiver).new(*args)
+        end
+      end
+
+      def clear_cache
+        @instance_cache && @instance_cache.clear
+      end
     end
+  end
+
+  def self.method_missing(receiver, *args)
+    Instance.for(receiver.to_s, *args)
   end
 
 end

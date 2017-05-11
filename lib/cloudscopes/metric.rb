@@ -67,8 +67,9 @@ module Cloudscopes
             @metric = metric
           end
 
-          def sample(*args)
-            @samples << Sample.new(*args)
+          def sample(aggregate: false, **options)
+            @samples << Sample.new(**options)
+            @samples << Sample.new(**options, dimensions: {}) if aggregate
           end
 
           def system # must define, otherwise kernel.system matches

@@ -66,6 +66,11 @@ module Cloudscopes
       log.error(exception)
     end
 
+    def reset
+      Instance.clear_cache
+      metric_groups.each(&:reset)
+    end
+
     %w(
       data_dimensions
       metric_groups

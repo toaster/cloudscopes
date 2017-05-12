@@ -51,7 +51,7 @@ if loop_period
   start_time = next_start_time = Time.now
   while true
     handle(Cloudscopes.samples)
-    Cloudscopes::Instance.clear_cache
+    Cloudscopes.reset
     GC.start
     while next_start_time <= start_time
       next_start_time = start_time + loop_period

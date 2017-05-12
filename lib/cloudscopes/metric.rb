@@ -35,6 +35,10 @@ module Cloudscopes
           [@category, collector.instance_variable_get("@samples")]
         end
 
+        def reset
+          @group.reset
+        end
+
         module Base
           class << self
             def included(base)
@@ -54,6 +58,9 @@ module Cloudscopes
 
           def log
             @log ||= Logger.new("/var/log/cloudscopes/plugins/#{@name}.log")
+          end
+
+          def reset
           end
 
           def method_missing(method, *args)
@@ -90,6 +97,9 @@ module Cloudscopes
 
         def samples
           [@category, @metrics.map(&:sample)]
+        end
+
+        def reset
         end
 
         class Metric

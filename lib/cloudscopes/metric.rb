@@ -76,7 +76,11 @@ module Cloudscopes
 
           def sample(aggregate: false, **options)
             @samples << Sample.new(**options)
-            @samples << Sample.new(**options, dimensions: {}) if aggregate
+            if aggregate
+              aggregation_dimensions = aggregate if Hash === aggregate
+              aggregation_dimensions ||= {}
+              @samples << Sample.new(**options, dimensions: aggregation_dimensions)
+            end
           end
 
           def system # must define, otherwise kernel.system matches

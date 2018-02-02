@@ -3,6 +3,10 @@ require 'logger'
 module Cloudscopes
   module Metric
     module Group
+      module Plugin
+        # plugin classes will be placed here
+      end
+
       class << self
         def from_plugin(*args)
           PluggedIn.new(*args)
@@ -17,7 +21,7 @@ module Cloudscopes
         def initialize(name, code)
           klass = Class.new { include Base }
           klass_name = Const.name_from_underscore_name(name)
-          Object.const_set(klass_name, klass)
+          Plugin.const_set(klass_name, klass)
           klass.class_eval(code)
           @group = klass.new
           @group.instance_variable_set("@name", name)

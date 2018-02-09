@@ -19,7 +19,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
   spec.extra_rdoc_files = ["README.md"]
 
-  spec.add_dependency 'aws-sdk', '~> 2.9'
+  spec.add_dependency 'aws-sdk-cloudwatch', '~> 1'
   spec.add_dependency 'sys-filesystem', '~> 1.1'
 
   spec.add_development_dependency "bundler"

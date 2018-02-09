@@ -15,15 +15,21 @@ module Cloudscopes
       if region = ENV['CLOUDSCOPES_REGION']
         @settings['region'] = region
       end
+      default_sample_interval = @settings['default_sample_interval'].to_i || 60
+      if default_sample_interval < 10 || default_sample_interval > 86_400
+        raise "The sample interval must be a value from 10 to 86,400 seconds."
+      end
       metric_definitions = configuration['metrics'] || {}
       if metric_dir = @settings['metric_definition_dir']
         merge_metric_definitions(metric_definitions,
             Dir.glob("#{metric_dir}/*").select(&File.method(:file?)))
       end
-      @metric_groups = metric_groups_from_definitions(metric_definitions)
+      @metric_groups = metric_groups_from_definitions(metric_definitions,
+          default_sample_interval: default_sample_interval)
       if plugin_dir = @settings['plugin_dir']
         @metric_groups += metric_groups_from_plugin_files(
-            Dir.glob("#{plugin_dir}/*.rb").select(&File.method(:file?)))
+            Dir.glob("#{plugin_dir}/*.rb").select(&File.method(:file?)),
+            default_sample_interval: default_sample_interval)
       end
       @data_dimensions ||=
           eval_dimension_specs(@settings['dimensions'] || {'InstanceId' => '#{ec2.instance_id}'})
@@ -31,7 +37,15 @@ module Cloudscopes
     end
 
     def samples
-      metric_groups.collect(&:samples)
+      now = Time.now
+      metric_groups
+          .select {|group| group.next_sampling_at < now }
+          .each {|group| group.compute_next_sampling_at_from(now) }
+          .collect(&:samples)
+    end
+
+    def next_sampling_time
+      metric_groups.map(&:next_sampling_at).sort.first
     end
 
     def publish(samples)
@@ -119,11 +133,13 @@ module Cloudscopes
       end
     end
 
-    def metric_groups_from_definitions(definitions)
-      definitions.map {|category, metrics| Metric::Group.from_definition(category, metrics) }
+    def metric_groups_from_definitions(definitions, **options)
+      definitions.map do |category, metrics|
+        Metric::Group.from_definition(category, metrics, **options)
+      end
     end
 
-    def metric_groups_from_plugin_files(plugin_files)
+    def metric_groups_from_plugin_files(plugin_files, **options)
       plugin_files.map do |file|
         code = File.read(file)
         name = File.basename(file)
@@ -131,7 +147,7 @@ module Cloudscopes
           name = name[0...-ext.length]
         end
         begin
-          Metric::Group.from_plugin(name, code)
+          Metric::Group.from_plugin(name, code, **options)
         rescue => e
           log_error("Error loading #{file}.", e)
         end

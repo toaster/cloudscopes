@@ -19,19 +19,14 @@ def exit_with_error(message)
 end
 
 publish = true
-loop_period = nil
+keep_running = false
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: #{$0} [options] <config.yaml>\n\nOptions:"
   opts.on("-t", "--test", "Dump samples to the console instead of publishing") do
     publish = false
   end
-  opts.on("-l", "--loop [PERIOD]", Integer,
-      "Perform sampling every PERIOD (defaults to 60) seconds") do |period|
-    period ||= 60
-    if period < 10 || period > 86_400
-      exit_with_error("The loop period must be a value from 10 to 86,400 seconds.")
-    end
-    loop_period = period
+  opts.on("-l", "--loop", "Perform sampling periodically as defined by the metrics") do
+    keep_running = true
   end
   opts.on_tail("-?", "-h", "--help", "Show this message") do
     puts(opts)
@@ -47,17 +42,13 @@ exit_with_error(option_parser) unless arguments.size == 1
 
 Cloudscopes.init(config_file: arguments.first, publish: publish)
 
-if loop_period
-  start_time = next_start_time = Time.now
+if keep_running
   while true
     handle(Cloudscopes.samples)
     Cloudscopes.reset
     GC.start
-    while next_start_time <= start_time
-      next_start_time = start_time + loop_period
-    end
-    sleep(next_start_time - Time.now)
-    start_time = next_start_time
+    sleep_time = Cloudscopes.next_sampling_time - Time.now
+    sleep(sleep_time) if sleep_time > 0
   end
 else
   handle(Cloudscopes.samples)

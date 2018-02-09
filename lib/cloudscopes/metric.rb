@@ -17,8 +17,23 @@ module Cloudscopes
         end
       end
 
+      module Base
+        def next_sampling_at
+          @next_sampling_at || Time.at(0)
+        end
+
+        def compute_next_sampling_at_from(last_sampling)
+          @next_sampling_at ||= last_sampling
+          while @next_sampling_at <= last_sampling
+            @next_sampling_at += @sample_interval
+          end
+        end
+      end
+
       class PluggedIn
-        def initialize(name, code)
+        include Cloudscopes::Metric::Group::Base
+
+        def initialize(name, code, default_sample_interval:)
           klass = Class.new { include Base }
           klass_name = Const.name_from_underscore_name(name)
           Plugin.const_set(klass_name, klass)
@@ -27,6 +42,8 @@ module Cloudscopes
           @group.instance_variable_set("@name", name)
           @category = klass.category || klass_name
           @compute_samples = klass.instance_variable_get("@compute_samples")
+          @sample_interval =
+              klass.instance_variable_get("@sample_interval") || default_sample_interval
         end
 
         def samples
@@ -57,6 +74,13 @@ module Cloudscopes
 
             def describe_samples(&block)
               @compute_samples = block
+            end
+
+            def sample_interval(value)
+              @sample_interval = value.to_i
+              if @sample_interval < 10 || @sample_interval > 86_400
+                raise "The sample interval must be a value from 10 to 86,400 seconds."
+              end
             end
           end
 
@@ -98,9 +122,12 @@ module Cloudscopes
       end
 
       class Defined
-        def initialize(category, metric_definitions)
+        include Cloudscopes::Metric::Group::Base
+
+        def initialize(category, metric_definitions, default_sample_interval:)
           @category = category
           @metrics = metric_definitions.map(&Metric.method(:new))
+          @sample_interval = default_sample_interval
         end
 
         def samples
@@ -136,15 +163,16 @@ module Cloudscopes
     end
 
     class Sample
-      attr_reader :name, :value, :unit, :dimensions
+      attr_reader :name, :value, :unit, :dimensions, :storage_resolution
 
-      def initialize(name:, value:, unit: nil, dimensions: nil)
+      def initialize(name:, value:, unit: nil, dimensions: nil, storage_resolution: nil)
         super()
         @name = name
         @value = value
         @unit = unit
         @dimensions = dimensions.map {|name, value| {name: name, value: value} } if dimensions
         @dimensions ||= Cloudscopes.data_dimensions
+        @storage_resolution = storage_resolution
       end
 
       def valid?
@@ -156,6 +184,7 @@ module Cloudscopes
         data = { metric_name: name, value: value }
         data[:unit] = unit if unit
         data[:dimensions] = dimensions
+        data[:storage_resolution] = 1 if storage_resolution && storage_resolution < 60
         data
       end
     end

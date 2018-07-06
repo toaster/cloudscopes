@@ -20,6 +20,7 @@ Gem::Specification.new do |spec|
   spec.extra_rdoc_files = ["README.md"]
 
   spec.add_dependency 'aws-sdk-cloudwatch', '~> 1'
+  spec.add_dependency 'json' # implicit dependency of AWS
   spec.add_dependency 'sys-filesystem', '~> 1.1'
 
   spec.add_development_dependency "bundler"

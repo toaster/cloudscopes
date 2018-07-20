@@ -51,7 +51,6 @@ end
 basedir = File.expand_path(File.dirname(__FILE__) + "/..")
 FileUtils.mkdir_p '/etc/cloudscopes/metric_definition.d'
 FileUtils.mkdir_p '/etc/cloudscopes/plugin.d'
-FileUtils.mkdir_p '/var/log/cloudscopes/plugins'
 FileUtils.cp "#{basedir}/config/monitoring.yaml", '/etc/cloudscopes/monitor.conf'
 FileUtils.cp "#{basedir}/config/default_metrics.yaml",
     '/etc/cloudscopes/metric_definition.d/default.yaml'

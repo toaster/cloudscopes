@@ -85,7 +85,7 @@ module Cloudscopes
           end
 
           def log
-            @log ||= Logger.new("/var/log/cloudscopes/plugins/#{@name}.log")
+            @log ||= Logger.new(@STDOUT, progname: @name)
           end
 
           def reset

@@ -13,9 +13,8 @@ Gem::Specification.new do |spec|
   spec.homepage      = "http://github.com/guss77/cloudscopes"
   spec.license       = "GPLv3"
 
-  spec.files         = `git ls-files -z`.split("\x0")
-  spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
-  spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
+  spec.files         = Dir['lib/**/*.rb'] + Dir['bin/*'] + Dir['config/*'] + Dir['[A-Z]*'] + Dir['*.gemspec']
+  spec.executables   = %w(cloudscopes-monitor cloudscopes-setup)
   spec.require_paths = ["lib"]
   spec.extra_rdoc_files = ["README.md"]
 

@@ -9,6 +9,16 @@ module Cloudscopes
   class << self
     def init(config_file:, publish: true)
       return if @initialized
+
+      begin
+        hypervisor_uuid = File.read("/sys/hypervisor/uuid")
+        unless hypervisor_uuid.start_with?("ec2")
+          raise "Unexpected hypervisor UUID: #{hypervisor_uuid}. Not running in EC2, so won't publish!"
+        end
+      rescue
+        raise unless ENV["CLOUDSCOPES_RUNS_ON_EC2"]
+      end
+
       configuration = YAML.load(File.read(config_file))
       @publish = publish
       @settings = configuration['settings']
@@ -49,10 +59,6 @@ module Cloudscopes
     end
 
     def publish(samples)
-      unless Kernel.system(
-          "test -f /sys/hypervisor/uuid && test `head -c 3 /sys/hypervisor/uuid` = ec2")
-        raise "Not running in EC2, so won't publish!"
-      end
       samples.each do |type, metric_samples|
         begin
           valid_data = metric_samples.select(&:valid?)

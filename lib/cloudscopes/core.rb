@@ -15,8 +15,9 @@ module Cloudscopes
         unless hypervisor_uuid.start_with?("ec2")
           raise "Unexpected hypervisor UUID: #{hypervisor_uuid}. Not running in EC2, so won't publish!"
         end
-      rescue
+      rescue => e
         raise unless ENV["CLOUDSCOPES_RUNS_ON_EC2"]
+        log_error("Failed EC2 check with hypervisor UUID.", e)
       end
 
       configuration = YAML.load(File.read(config_file))
@@ -78,7 +79,7 @@ module Cloudscopes
     end
 
     def log
-      @logger = Logger.new(STDOUT)
+      @logger ||= Logger.new(STDOUT)
     end
 
     def log_error(msg, exception)
